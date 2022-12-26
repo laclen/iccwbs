@@ -1,10 +1,8 @@
 {
   "expo": {
-    "name": "iccwbs",
+    "name": "ICCW Sertifika Kontrol",
     "slug": "iccwbs",
     "version": "1.0.0",
-    "assetBundlePatterns": [
-      "**/*"
-    ]
+    "assetBundlePatterns": ["**/*"]
   }
 }
