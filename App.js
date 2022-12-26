@@ -45,7 +45,7 @@ export default function App() {
   }
 
   return (
-    <LinearGradient colors={["gray", "#667eea", "#764ba2"]} style={styles.background}>
+    <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.background}>
       <View style={styles.imageWrapper}>
         <Image source={Logo} style={styles.image} resizeMode="cover" />
       </View>
@@ -69,7 +69,7 @@ export default function App() {
               <View style={styles.barcodeScannerAfter}>
                 <BarCodeScanner style={styles.barcodeScanner} onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} />
                 <Pressable onPress={() => setShowScanner(false)} style={styles.button}>
-                  <Text style={styles.scanAgainText}>İPTAL</Text>
+                  <Text style={styles.buttonText}>İPTAL</Text>
                 </Pressable>
               </View>
             ) : (
@@ -82,7 +82,7 @@ export default function App() {
                   }}
                   style={styles.button}
                 >
-                  <Text style={styles.scanAgainText}>SORGULAMA YAP</Text>
+                  <Text style={styles.buttonText}>SORGULAMA YAP</Text>
                 </Pressable>
               </View>
             )}
@@ -90,7 +90,7 @@ export default function App() {
         )}
         {scanned && (
           <Pressable onPress={() => setScanned(false)} style={styles.button}>
-            <Text style={styles.scanAgainText}>TEKRAR SORGULA</Text>
+            <Text style={styles.buttonText}>TEKRAR SORGULA</Text>
           </Pressable>
         )}
       </View>
@@ -119,12 +119,13 @@ const styles = StyleSheet.create({
   scannerWrapper: {
     flex: 0.5,
     alignItems: "center",
+    paddingTop: hp("2%"),
   },
   barcodeScanner: {
     backgroundColor: "black",
 
     width: wp("90%"),
-    height: hp("50%"),
+    height: hp("45%"),
 
     marginHorizontal: wp("1%"),
     marginBottom: hp("2%"),
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  scanAgainText: {
+  buttonText: {
     fontSize: 16,
     fontWeight: "500",
   },
