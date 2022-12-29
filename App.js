@@ -1,16 +1,39 @@
 import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, Alert } from "react-native";
+import { StyleSheet, Text, View, Pressable, Image, Alert, TouchableOpacity, Linking, DevSettings } from "react-native";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
 import { BarCodeScanner } from "expo-barcode-scanner";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Logo from "./assets/iccwgenis.png";
+import MyStatusBar from "./components/MyStatusBar";
 
 export default function App() {
+  // detect first launch to display helper messages only for once
+  const HAS_LAUNCHED = "hasLaunched";
+  const firstLaunch = async () => {
+    try {
+      const hasLaunched = await AsyncStorage.getItem(HAS_LAUNCHED);
+      if (hasLaunched === null) {
+        AsyncStorage.setItem(HAS_LAUNCHED, "true");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // open settings for camera permission
+  const getSettings = () => Linking.openSettings();
+
+  // restart app after after navigating user to settings
+  const restartApp = () => DevSettings.reload();
+
   // state declarations for managing camera permission, and data storing
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
-  const [response, setResponse] = useState({ type: null, data: null });
+  const [response, setResponse] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
   const [iframelink, setIframeLink] = useState(null);
 
@@ -36,17 +59,10 @@ export default function App() {
     }
   };
 
-  // checks if camera permission has been granted
-  if (hasPermission === null) {
-    return <Text>Requesting for camera permission</Text>;
-  }
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
-  }
-
   return (
     <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.background}>
-      <View style={styles.imageWrapper}>
+      <MyStatusBar />
+      <View style={showScanner ? styles.imageWrapperAfter : styles.imageWrapper}>
         <Image source={Logo} style={styles.image} resizeMode="cover" />
       </View>
 
@@ -54,11 +70,11 @@ export default function App() {
         {scanned && response ? (
           <View style={styles.barcodeScannerResult}>
             <WebView
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
               source={{
                 html:
-                  '</table><iframe id="frame" style="background: (0,0,0,0)" width="100%"  height="100%" scrolling="yes" src="' +
-                  iframelink +
-                  '" frameborder="0" allow="autoplay; encrypted-media"></iframe>',
+                  '</table><iframe id="frame" style="background: " width="100%"  height="100%" scrolling="yes" src="' + iframelink + '" frameborder="0" allow="autoplay; encrypted-media"></iframe>',
               }}
               style={styles.webView}
             />
@@ -68,6 +84,19 @@ export default function App() {
             {showScanner ? (
               <View style={styles.barcodeScannerAfter}>
                 <BarCodeScanner style={styles.barcodeScanner} onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} />
+                {hasPermission === false && (
+                  <TouchableOpacity
+                    style={styles.permissionButton}
+                    onPress={() => {
+                      getSettings();
+                      setTimeout(() => {
+                        restartApp();
+                      }, 5000);
+                    }}
+                  >
+                    <Text style={styles.permissionText}>Ayarlara gidip kameraya izin vermek için buraya dokunun.</Text>
+                  </TouchableOpacity>
+                )}
                 <Pressable onPress={() => setShowScanner(false)} style={styles.button}>
                   <Text style={styles.buttonText}>İPTAL</Text>
                 </Pressable>
@@ -76,9 +105,11 @@ export default function App() {
               <View style={styles.barcodeScannerBefore}>
                 <Text style={styles.helperText}> Merhaba, sertifika sorgulamak için lütfen aşağıdaki butona tıklayınız.</Text>
                 <Pressable
-                  onPress={() => {
+                  onPress={async () => {
                     setShowScanner(true);
-                    Alert.alert("Dikkat", "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun.");
+                    const isFirstLaunch = await firstLaunch();
+                    console.log(isFirstLaunch);
+                    isFirstLaunch ? Alert.alert("Dikkat", "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun.") : null;
                   }}
                   style={styles.button}
                 >
@@ -94,7 +125,7 @@ export default function App() {
           </Pressable>
         )}
       </View>
-      <Text style={styles.copyright}>Lim10Medya &copy; Tüm hakları saklıdır.</Text>
+      <Text style={styles.copyright}>Lim10 Medya &copy; Tüm hakları saklıdır.</Text>
     </LinearGradient>
   );
 }
@@ -107,7 +138,11 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     flex: 0.2,
-    paddingTop: hp("10%"),
+    paddingTop: hp("25%"),
+  },
+  imageWrapperAfter: {
+    flex: 0.2,
+    paddingTop: hp("3.5%"),
   },
   webView: {
     backgroundColor: "rgba(0,0,0,0)",
@@ -128,14 +163,15 @@ const styles = StyleSheet.create({
     height: hp("45%"),
 
     marginHorizontal: wp("1%"),
-    marginBottom: hp("2%"),
+    marginVertical: hp("2%"),
+    marginBottom: hp("3%"),
   },
   barcodeScannerAfter: {
     alignItems: "center",
   },
   barcodeScannerBefore: {
     width: wp("80%"),
-    height: hp("50%"),
+    height: hp("30%"),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -144,6 +180,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: hp("3%"),
     fontSize: 16,
+  },
+  permissionButton: {
+    paddingBottom: hp("2.5%"),
+  },
+  permissionText: {
+    fontSize: 12,
+    color: "white",
   },
   barcodeScannerResult: {
     width: wp("80%"),
@@ -160,9 +203,9 @@ const styles = StyleSheet.create({
     paddingVertical: hp("1%"),
     paddingHorizontal: wp("1%"),
 
-    borderRadius: 10,
-    width: wp("70%"),
-    height: hp("6%"),
+    borderRadius: 15,
+    width: wp("70.5%"),
+    height: hp("6.5%"),
 
     justifyContent: "center",
     alignItems: "center",
@@ -170,9 +213,12 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "500",
+    letterSpacing: 1,
   },
   copyright: {
     color: "white",
-    top: hp("20%"),
+    fontSize: 12,
+    position: "absolute",
+    bottom: 10,
   },
 });
