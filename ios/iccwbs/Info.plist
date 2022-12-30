@@ -36,7 +36,7 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app uses camera for scanning barcodes behind ID cards.</string>
+	<string>ICCW uygulaması vatandaş kimlik kartı arkasındaki barkodu okumak için kamera izni istiyor.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

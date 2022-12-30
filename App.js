@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, Alert, TouchableOpacity, Linking, DevSettings } from "react-native";
+import { StyleSheet, Text, View, Pressable, Image, Alert, TouchableOpacity, Linking } from "react-native";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Feather } from "@expo/vector-icons";
 import Logo from "./assets/iccwgenis.png";
 import MyStatusBar from "./components/MyStatusBar";
 
@@ -27,22 +28,30 @@ export default function App() {
   // open settings for camera permission
   const getSettings = () => Linking.openSettings();
 
-  // restart app after after navigating user to settings
-  const restartApp = () => DevSettings.reload();
-
   // state declarations for managing camera permission, and data storing
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [response, setResponse] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [showPermissionButton, setShowPermissionButton] = useState(true);
   const [iframelink, setIframeLink] = useState(null);
 
   // get camera permission
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === "granted");
+      const response = await BarCodeScanner.getPermissionsAsync();
+      console.log("response: ", response);
+
+      if (response.status !== "granted") {
+        const request = await BarCodeScanner.requestPermissionsAsync();
+        console.log("request: ", request);
+        setHasPermission(request.status === "granted");
+      } else {
+        setShowPermissionButton(false);
+        setHasPermission(response.status === "granted");
+      }
     };
+    console.log("hasPermission:  " + hasPermission);
 
     getBarCodeScannerPermissions();
   }, []);
@@ -50,9 +59,9 @@ export default function App() {
   // scan the barcode and store the response, alert if barcode is on unwanted type
   const handleBarCodeScanned = ({ type, data }) => {
     if (type === "org.iso.Code128") {
+      setIframeLink("https:/iccw.us/iccw/admin/view-certificate/" + data + "/21?table=true");
       setScanned(true);
       setResponse({ type: type, data: data });
-      setIframeLink("https:/iccw.us/iccw/admin/view-certificate/" + data + "/21?table=true");
     } else {
       Alert.alert("Hata!", "Okuttuğunuz barkod hatalı, lütfen kimlik kartınızın yeni olduğundan ve arka yüzde, sol üstteki barkodu tarattığınızdan emin olun.");
       setShowScanner(false);
@@ -84,17 +93,19 @@ export default function App() {
             {showScanner ? (
               <View style={styles.barcodeScannerAfter}>
                 <BarCodeScanner style={styles.barcodeScanner} onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} />
-                {hasPermission === false && (
+                {showPermissionButton && (
                   <TouchableOpacity
                     style={styles.permissionButton}
-                    onPress={() => {
+                    onPress={async () => {
+                      setShowScanner(false);
                       getSettings();
-                      setTimeout(() => {
-                        restartApp();
-                      }, 5000);
                     }}
                   >
-                    <Text style={styles.permissionText}>Ayarlara gidip kameraya izin vermek için buraya dokunun.</Text>
+                    <View style={styles.permissionButtonWrapper}>
+                      <Feather name="info" size={18} color="gainsboro" style={styles.infoIcon} />
+                      <Text style={styles.permissionText}>Barkod okuyucunun çalışması için kamera izni gereklidir.</Text>
+                    </View>
+                    <Text style={styles.permissionText}>Uygulama ayarlarına gitmek için buraya dokunun.</Text>
                   </TouchableOpacity>
                 )}
                 <Pressable onPress={() => setShowScanner(false)} style={styles.button}>
@@ -106,9 +117,11 @@ export default function App() {
                 <Text style={styles.helperText}> Merhaba, sertifika sorgulamak için lütfen aşağıdaki butona tıklayınız.</Text>
                 <Pressable
                   onPress={async () => {
+                    const perm = await BarCodeScanner.getPermissionsAsync();
+                    perm.granted ? setShowPermissionButton(false) : setShowPermissionButton(true);
                     setShowScanner(true);
+                    setScanned(false);
                     const isFirstLaunch = await firstLaunch();
-                    console.log(isFirstLaunch);
                     isFirstLaunch ? Alert.alert("Dikkat", "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun.") : null;
                   }}
                   style={styles.button}
@@ -181,12 +194,21 @@ const styles = StyleSheet.create({
     marginVertical: hp("3%"),
     fontSize: 16,
   },
+  permissionButtonWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   permissionButton: {
-    paddingBottom: hp("2.5%"),
+    paddingBottom: hp("2%"),
+    alignItems: "center",
   },
   permissionText: {
     fontSize: 12,
-    color: "white",
+    color: "gainsboro",
+  },
+  infoIcon: {
+    marginRight: wp("1%"),
+    paddingTop: hp("0.2%"),
   },
   barcodeScannerResult: {
     width: wp("80%"),
@@ -216,8 +238,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   copyright: {
-    color: "white",
-    fontSize: 12,
+    color: "gainsboro",
+    fontSize: 11,
     position: "absolute",
     bottom: 10,
   },

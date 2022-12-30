@@ -2,10 +2,8 @@
   "expo": {
     "name": "ICCW Sertifika Sorgulama",
     "slug": "ICCWSertifiSorgulama",
-    "version": "1.0.0",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "version": "1.0.1",
+    "assetBundlePatterns": ["**/*"],
     "extra": {
       "eas": {
         "projectId": "b8869e74-4abb-400b-961f-554d0b549052"
