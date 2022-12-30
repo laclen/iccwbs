@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ICCW Sertifika Sorgulama",
-    "slug": "ICCWSertifiSorgulama",
+    "slug": "ICCWSertifikaSorgulama",
     "version": "1.0.1",
     "assetBundlePatterns": ["**/*"],
     "extra": {
