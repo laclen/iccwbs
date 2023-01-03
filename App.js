@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, Pressable, Image, Alert, TouchableOpacity, Linking } from "react-native";
+import { StyleSheet, Text, View, Pressable, Image, Alert, TouchableOpacity, Linking, Platform } from "react-native";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,6 +10,11 @@ import Logo from "./assets/iccwgenis.png";
 import MyStatusBar from "./components/MyStatusBar";
 
 export default function App() {
+  // we should detect the platform for barcode validation because barcode types differentiate between platforms
+  const device = Platform.OS;
+  const barcodeTypeAndroid = 1;
+  const barcodeTypeIOS = "org.iso.Code128";
+
   // detect first launch to display helper messages only for once
   const HAS_LAUNCHED = "hasLaunched";
   const firstLaunch = async () => {
@@ -28,8 +33,7 @@ export default function App() {
   // open settings for camera permission
   const getSettings = () => Linking.openSettings();
 
-  // state declarations for managing camera permission, and data storing
-  const [hasPermission, setHasPermission] = useState(null);
+  // state declarations for managing camera permission, conditional dipslaying and data storing
   const [scanned, setScanned] = useState(false);
   const [response, setResponse] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
@@ -40,30 +44,38 @@ export default function App() {
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const response = await BarCodeScanner.getPermissionsAsync();
-      console.log("response: ", response);
+      // console.log("response: ", response);
 
       if (response.status !== "granted") {
         const request = await BarCodeScanner.requestPermissionsAsync();
-        console.log("request: ", request);
-        setHasPermission(request.status === "granted");
+        // console.log("request: ", request);
       } else {
         setShowPermissionButton(false);
-        setHasPermission(response.status === "granted");
       }
     };
-    console.log("hasPermission:  " + hasPermission);
+    // console.log("hasPermission:  " + hasPermission);
 
     getBarCodeScannerPermissions();
   }, []);
 
-  // scan the barcode and store the response, alert if barcode is on unwanted type
+  // barcode validation
+  const validateBarcode = (type) => {
+    if (device === "android") {
+      return type === barcodeTypeAndroid;
+    } else if (device === "ios") {
+      return type === barcodeTypeIOS;
+    }
+  };
+
+  // scan the barcode and store the response, alert if barcode is unwanted type
   const handleBarCodeScanned = ({ type, data }) => {
-    if (type === "org.iso.Code128") {
+    // console.log(type);
+    if (validateBarcode(type)) {
       setIframeLink("https:/iccw.us/iccw/admin/view-certificate/" + data + "/21?table=true");
       setScanned(true);
       setResponse({ type: type, data: data });
     } else {
-      Alert.alert("Hata!", "Okuttuğunuz barkod hatalı, lütfen kimlik kartınızın yeni olduğundan ve arka yüzde, sol üstteki barkodu tarattığınızdan emin olun.");
+      Alert.alert("Hata!", `Okuttuğunuz barkod tipi "${type}" kabul edilmiyor, lütfen yeni kimlik kartınızın arkasında sağ üstte bulunan barkodu tarattığınızdan emin olun.`);
       setShowScanner(false);
     }
   };
@@ -78,15 +90,17 @@ export default function App() {
       <View style={styles.scannerWrapper}>
         {scanned && response ? (
           <View style={styles.barcodeScannerResult}>
-            <WebView
-              showsHorizontalScrollIndicator={false}
-              showsVerticalScrollIndicator={false}
-              source={{
-                html:
-                  '</table><iframe id="frame" style="background: " width="100%"  height="100%" scrolling="yes" src="' + iframelink + '" frameborder="0" allow="autoplay; encrypted-media"></iframe>',
-              }}
-              style={styles.webView}
-            />
+            {iframelink && (
+              <WebView
+                showsHorizontalScrollIndicator={false}
+                showsVerticalScrollIndicator={false}
+                source={{
+                  html:
+                    '</table><iframe id="frame" style="background: " width="100%"  height="100%" scrolling="yes" src="' + iframelink + '" frameborder="0" allow="autoplay; encrypted-media"></iframe>',
+                }}
+                style={styles.webView}
+              />
+            )}
           </View>
         ) : (
           <View>
@@ -122,7 +136,7 @@ export default function App() {
                     setShowScanner(true);
                     setScanned(false);
                     const isFirstLaunch = await firstLaunch();
-                    isFirstLaunch ? Alert.alert("Dikkat", "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun.") : null;
+                    isFirstLaunch && showScanner ? Alert.alert("Dikkat", "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun.") : null;
                   }}
                   style={styles.button}
                 >
