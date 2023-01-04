@@ -10,11 +10,6 @@ import Logo from "./assets/iccwgenis.png";
 import MyStatusBar from "./components/MyStatusBar";
 
 export default function App() {
-  // we should detect the platform for barcode validation because barcode types differentiate between platforms
-  const device = Platform.OS;
-  const barcodeTypeAndroid = 1;
-  const barcodeTypeIOS = "org.iso.Code128";
-
   // detect first launch to display helper messages only for once
   const HAS_LAUNCHED = "hasLaunched";
   const firstLaunch = async () => {
@@ -30,9 +25,6 @@ export default function App() {
     }
   };
 
-  // open settings for camera permission
-  const getSettings = () => Linking.openSettings();
-
   // state declarations for managing camera permission, conditional dipslaying and data storing
   const [scanned, setScanned] = useState(false);
   const [response, setResponse] = useState(null);
@@ -40,11 +32,10 @@ export default function App() {
   const [showPermissionButton, setShowPermissionButton] = useState(true);
   const [iframelink, setIframeLink] = useState(null);
 
-  // TEST: set scanned false to true, set response null to true, set iframelink null to one of below, showScanner false to true
-  const wrongTestCase = "https:/iccw.us/iccw/admin/view-certificate/36100370392/21?table=true";
-  const trueTestCase = "https:/iccw.us/iccw/admin/view-certificate/11912534422/21?table=true";
+  // open settings for camera permission
+  const getSettings = () => Linking.openSettings();
 
-  // get camera permission
+  // check & get camera permission
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const response = await BarCodeScanner.getPermissionsAsync();
@@ -57,12 +48,15 @@ export default function App() {
     getBarCodeScannerPermissions();
   }, []);
 
+  // we should detect the device's platform for barcode validation because barcode types differentiate between platforms
+  const platform = Platform.OS;
+
   // barcode validation
   const validateBarcode = (type) => {
-    if (device === "android") {
-      return type === barcodeTypeAndroid;
-    } else if (device === "ios") {
-      return type === barcodeTypeIOS;
+    if (platform === "android") {
+      return type === 1;
+    } else if (platform === "ios") {
+      return type === "org.iso.Code128";
     }
   };
 
