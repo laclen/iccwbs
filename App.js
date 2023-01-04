@@ -40,21 +40,20 @@ export default function App() {
   const [showPermissionButton, setShowPermissionButton] = useState(true);
   const [iframelink, setIframeLink] = useState(null);
 
+  // TEST: set scanned false to true, set response null to true, set iframelink null to one of below, showScanner false to true
+  const wrongTestCase = "https:/iccw.us/iccw/admin/view-certificate/36100370392/21?table=true";
+  const trueTestCase = "https:/iccw.us/iccw/admin/view-certificate/11912534422/21?table=true";
+
   // get camera permission
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const response = await BarCodeScanner.getPermissionsAsync();
-      // console.log("response: ", response);
-
       if (response.status !== "granted") {
         const request = await BarCodeScanner.requestPermissionsAsync();
-        // console.log("request: ", request);
       } else {
         setShowPermissionButton(false);
       }
     };
-    // console.log("hasPermission:  " + hasPermission);
-
     getBarCodeScannerPermissions();
   }, []);
 
@@ -69,13 +68,15 @@ export default function App() {
 
   // scan the barcode and store the response, alert if barcode is unwanted type
   const handleBarCodeScanned = ({ type, data }) => {
-    // console.log(type);
     if (validateBarcode(type)) {
       setIframeLink("https:/iccw.us/iccw/admin/view-certificate/" + data + "/21?table=true");
       setScanned(true);
       setResponse({ type: type, data: data });
     } else {
-      Alert.alert("Hata!", `Okuttuğunuz barkod tipi "${type}" kabul edilmiyor, lütfen yeni kimlik kartınızın arkasında sağ üstte bulunan barkodu tarattığınızdan emin olun.`);
+      Alert.alert(
+        "Hata!",
+        `Okuttuğunuz barkod tipi "${type}" kabul edilmiyor, lütfen yeni kimlik kartınızın arkasında sağ üstte bulunan barkodu tarattığınızdan emin olun.`
+      );
       setShowScanner(false);
     }
   };
@@ -96,7 +97,9 @@ export default function App() {
                 showsVerticalScrollIndicator={false}
                 source={{
                   html:
-                    '</table><iframe id="frame" style="background: " width="100%"  height="100%" scrolling="yes" src="' + iframelink + '" frameborder="0" allow="autoplay; encrypted-media"></iframe>',
+                    '</table><iframe id="frame" style="background: " width="100%"  height="100%" scrolling="yes" src="' +
+                    iframelink +
+                    '" frameborder="0" allow="autoplay; encrypted-media"></iframe>',
                 }}
                 style={styles.webView}
               />
@@ -106,7 +109,10 @@ export default function App() {
           <View>
             {showScanner ? (
               <View style={styles.barcodeScannerAfter}>
-                <BarCodeScanner style={styles.barcodeScanner} onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} />
+                <BarCodeScanner
+                  style={styles.barcodeScanner}
+                  onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+                />
                 {showPermissionButton && (
                   <TouchableOpacity
                     style={styles.permissionButton}
@@ -117,7 +123,9 @@ export default function App() {
                   >
                     <View style={styles.permissionButtonWrapper}>
                       <Feather name="info" size={18} color="gainsboro" style={styles.infoIcon} />
-                      <Text style={styles.permissionText}>Barkod okuyucunun çalışması için kamera izni gereklidir.</Text>
+                      <Text style={styles.permissionText}>
+                        Barkod okuyucunun çalışması için kamera izni gereklidir.
+                      </Text>
                     </View>
                     <Text style={styles.permissionText}>Uygulama ayarlarına gitmek için buraya dokunun.</Text>
                   </TouchableOpacity>
@@ -128,15 +136,22 @@ export default function App() {
               </View>
             ) : (
               <View style={styles.barcodeScannerBefore}>
-                <Text style={styles.helperText}> Merhaba, sertifika sorgulamak için lütfen aşağıdaki butona tıklayınız.</Text>
+                <Text style={styles.helperText}>
+                  {" "}
+                  Merhaba, sertifika sorgulamak için lütfen aşağıdaki butona tıklayınız.
+                </Text>
                 <Pressable
                   onPress={async () => {
                     const perm = await BarCodeScanner.getPermissionsAsync();
                     perm.granted ? setShowPermissionButton(false) : setShowPermissionButton(true);
                     setShowScanner(true);
                     setScanned(false);
-                    const isFirstLaunch = await firstLaunch();
-                    isFirstLaunch && showScanner ? Alert.alert("Dikkat", "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun.") : null;
+                    (await firstLaunch())
+                      ? Alert.alert(
+                          "Dikkat",
+                          "Lütfen TC Kimlik kartınızın arka yüzündeki barkodu kameraya doğru tutun."
+                        )
+                      : null;
                   }}
                   style={styles.button}
                 >

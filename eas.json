@@ -7,17 +7,19 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug"
-      },
-      "ios": {
-        "buildConfiguration": "Debug"
       }
     },
     "preview": {
       "distribution": "internal"
     },
-    "previewAPK": {
+    "testAndroid": {
       "android": {
         "buildType": "apk"
+      }
+    },
+    "testIOS": {
+      "ios": {
+        "simulator": "true"
       }
     },
     "production": {}
@@ -26,6 +28,11 @@
     "production": {
       "android": {
         "serviceAccountKeyPath": "./serviceAccountKey/pc-api-8728546704182771598-254-8b79bd9fa7ff.json"
+      },
+      "ios": {
+        "appleId": "celal.zamanoglu@hotmail.com",
+        "ascAppId": "1662679493",
+        "appleTeamId": "Y4R638ZR9L"
       }
     }
   }
